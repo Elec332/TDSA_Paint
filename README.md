@@ -1,5 +1,7 @@
 # TDSA_Paint
 
+Requirements: Java 1.8+
+
 Small how-to-use:
 
 ## Top menu bar
