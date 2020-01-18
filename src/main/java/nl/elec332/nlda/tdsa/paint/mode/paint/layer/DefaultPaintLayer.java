@@ -82,6 +82,7 @@ public class DefaultPaintLayer implements IPaintLayer {
         }
         this.components.removeIf(c -> c.getUuid().equals(uuid));
         this.mode.getWindow().markDirty();
+        this.mode.getWindow().repaintWindow();
     }
 
     @Override
