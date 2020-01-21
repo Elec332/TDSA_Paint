@@ -32,13 +32,15 @@ public class EditMode extends MouseAdapter implements IProgramMode {
         this.window = window;
         this.selected = Sets.newHashSet();
         this.alwaysBB = true;
+        this.startDrag = false;
     }
 
     private static final int POINT_RANGE = 3;
 
     private final IProgramWindow window;
     private final Set<UUID> selected;
-    private boolean alwaysBB, active;
+    private boolean alwaysBB, active, startDrag;
+    private PaintBB startDBB;
     private UUID focus;
     private Point drag, resize;
     private int pointIndex;
@@ -138,7 +140,7 @@ public class EditMode extends MouseAdapter implements IProgramMode {
                 .map(IPaintComponent::getBoundingBox)
                 .orElse(null);
         if (bb == null) {
-            drag = null;
+            endDrag();
             return;
         }
         Point[] points = getPoints(bb);
@@ -154,15 +156,31 @@ public class EditMode extends MouseAdapter implements IProgramMode {
         resize = null;
         pointIndex = -1;
         if (!bb.contains(drag.x, drag.y)) {
-            drag = null;
+            endDrag();
             focus = null;
             getWindow().repaintWindow();
         }
     }
 
+    private void endDrag() {
+        startDrag = false;
+        drag = null;
+        startDBB = null;
+    }
+
+    private void startDrag() {
+        startDBB = getPaintComponent(focus)
+                .orElseThrow(RuntimeException::new)
+                .getBoundingBox();
+    }
+
     @Override
     public void mouseDragged(MouseEvent e) {
         if (drag != null) {
+            if (!startDrag) {
+                startDrag();
+                startDrag = true;
+            }
             Point mouse = e.getPoint();
             Point offset = new Point(drag.x - mouse.x, drag.y - mouse.y);
             drag = mouse;
@@ -207,6 +225,12 @@ public class EditMode extends MouseAdapter implements IProgramMode {
         if (newBB.height == 0) {
             newBB.height = 1;
         }
+        if (startDBB.width < 0) {
+            newBB = new Rectangle(newBB.x + newBB.width, newBB.y, -newBB.width, newBB.height);
+        }
+        if (startDBB.height < 0) {
+            newBB = new Rectangle(newBB.x, newBB.y + newBB.height, newBB.width, -newBB.height);
+        }
         getPaintComponent(focus)
                 .orElseThrow(RuntimeException::new)
                 .setBoundingBox(new PaintBB(newBB.x, newBB.y, newBB.width, newBB.height));
@@ -215,7 +239,7 @@ public class EditMode extends MouseAdapter implements IProgramMode {
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        drag = null;
+        endDrag();
     }
 
     @Override
